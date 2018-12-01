@@ -265,25 +265,23 @@ println(s"Test set accuracy = ${evaluator.evaluate(predictionAndLabels)}")
 
 
 //////////////////////////////    ~~~~ Arbol de Desiciones ~~~~     ///////////////////////////////
-
 import org.apache.spark.ml.classification.DecisionTreeClassificationModel
 import org.apache.spark.ml.classification.DecisionTreeClassifier
 import org.apache.spark.ml.evaluation.MulticlassClassificationEvaluator
 import org.apache.spark.ml.feature.{IndexToString, StringIndexer, VectorIndexer}
-import org.apache.spark.ml.feature.{VectorAssembler, StringIndexer, VectorIndexer, OneHotEncoderEstimator}
 
 
-val label_Indexer = new StringIndexer().setInputCol("label").setOutputCol("indexedLabel").fit(df)
+val labelIndexer = new StringIndexer().setInputCol("label").setOutputCol("indexedLabel").fit(df)
 // Automatically identify categorical features, and index them.
-val feature_Indexer = new VectorIndexer().setInputCol("features").setOutputCol("indexedFeatures").setMaxCategories(4)// features with > 4 distinct values are treated as continuous.  .fit(data)
+val featureIndexer = new VectorIndexer().setInputCol("features").setOutputCol("indexedFeatures").setMaxCategories(4)// features with > 4 distinct values are treated as continuous.  .fit(data)
 // Split the data into training and test sets (30% held out for testing).
 val Array(trainingData, testData) = df.randomSplit(Array(0.6, 0.4))
 // Train a DecisionTree model.
-val d4 = new DecisionTreeClassifier().setLabelCol("indexedLabel").setFeaturesCol("indexedFeatures")
+val dt = new DecisionTreeClassifier().setLabelCol("indexedLabel").setFeaturesCol("indexedFeatures")
 // Convert indexed labels back to original labels.
-val label_Converter = new IndexToString().setInputCol("prediction").setOutputCol("predictedLabel").setLabels(label_Indexer.labels)
+val labelConverter = new IndexToString().setInputCol("prediction").setOutputCol("predictedLabel").setLabels(labelIndexer.labels)
 // Chain indexers and tree in a Pipeline.
-val pipeline = new Pipeline().setStages(Array(label_Indexer, feature_Indexer, d4, label_Converter))
+val pipeline = new Pipeline().setStages(Array(labelIndexer, featureIndexer, dt, labelConverter))
 // Train model. This also runs the indexers.
 val model = pipeline.fit(trainingData)
 // Make predictions.
@@ -295,5 +293,5 @@ val evaluator = new MulticlassClassificationEvaluator().setLabelCol("indexedLabe
 val accuracy = evaluator.evaluate(predictions)
 println(s"Test Error = ${(1.0 - accuracy)}")
 
-val 3Model = model.stages(2).asInstanceOf[DecisionTreeClassificationModel]
-println(s"Learned classification tree model:\n ${3Model.toDebugString}")
+val treeModel = model.stages(2).asInstanceOf[DecisionTreeClassificationModel]
+println(s"Learned classification tree model:\n ${treeModel.toDebugString}")
